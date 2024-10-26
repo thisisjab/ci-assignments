@@ -1,4 +1,4 @@
-package load_data
+package data 
 
 import (
 	"encoding/json"
@@ -26,6 +26,7 @@ func UnmarshalTrainingDataFile(path string) []models.TrainingVectorJsonObject {
 	return data
 }
 
+// PrepareData function converts a n*n matrix to a row-matrix format which makes it easier to calculate.
 func PrepareData(data []models.TrainingVectorJsonObject) []models.TrainingVector {
 	var results []models.TrainingVector
 
