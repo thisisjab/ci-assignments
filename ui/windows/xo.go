@@ -5,8 +5,10 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
+	"xo-detection/data"
 	"xo-detection/models"
 	"xo-detection/training"
+	"xo-detection/training/hebb"
 	"xo-detection/training/perceptron"
 )
 
@@ -17,19 +19,17 @@ var resultButton *widget.Button
 var clearButton *widget.Button
 var resultLabel *widget.Label
 
-func init() {
-	calculatedWeights, _ := training.GetOrCalculateWeights("xo-perceptron", "saved_weights/xo-perceptron.json")
+var perceptronDataObject models.SavedWeightAndBiasJsonObject
+var hebbDataObject models.SavedWeightAndBiasJsonObject
 
+func init() {
 	// Initiating values
-	for i, _ := range values {
+	for i := range values {
 		values[i] = -1
 	}
 
 	resultLabel = widget.NewLabel("Click on result button to see the result.")
 	clearButton = widget.NewButton("Clear", func() { clearValues() })
-	resultButton = widget.NewButton("Result", func() {
-		calculateResult(calculatedWeights.Weights, calculatedWeights.Bias, calculatedWeights.Theta)
-	})
 }
 
 func XOWindow(parent *fyne.Window) *fyne.Container {
@@ -54,6 +54,12 @@ func XOWindow(parent *fyne.Window) *fyne.Container {
 		vbox.Add(buttonsRow)
 	}
 
+	loadWeightsToMemory()
+
+	resultButton = widget.NewButton("Result", func() {
+		calculateResult()
+	})
+
 	vbox.Add(resultButton)
 	vbox.Add(clearButton)
 	vbox.Add(resultLabel)
@@ -73,23 +79,80 @@ func toggleValues(i int, j int) {
 }
 
 func clearValues() {
-	for i, _ := range values {
+	for i := range values {
 		values[i] = -1
 		buttons[i].SetText("")
 		resultLabel.SetText("Click on result button to see the result")
 	}
 }
 
-func calculateResult(weights models.Weights, bias, theta float64) {
-	f := perceptron.Result(values, weights, bias, theta)
-	result := ""
-	formattedText := "Perceptron: %v"
+func calculateResult() {
+	formattedText := "Perceptron: %v | Hebb: %v"
 
-	if f == 1 {
-		result = "X"
+	fPerceptron := perceptron.Result(values, perceptronDataObject.Weights, perceptronDataObject.Bias, perceptronDataObject.Theta)
+	resultPerceptron := ""
+
+	fHebb := hebb.Result(values, hebbDataObject.Weights, hebbDataObject.Bias)
+	resultHebb := ""
+
+	if fPerceptron == 1 {
+		resultPerceptron = "X"
 	} else {
-		result = "O"
+		resultPerceptron = "O"
 	}
 
-	resultLabel.SetText(fmt.Sprintf(formattedText, result))
+	if fHebb >= 1 {
+		resultHebb = "X"
+	} else {
+		resultHebb = "O"
+	}
+
+	resultLabel.SetText(fmt.Sprintf(formattedText, resultPerceptron, resultHebb))
+}
+
+// loadWeightsToMemory reads saved weights file or creates the file and saves the weights after training.
+func loadWeightsToMemory() {
+	perceptronDataObject = training.LoadWeightsOrTrain("saved_weights/xo-perceptron.json", func() models.SavedWeightAndBiasJsonObject {
+		loadedTrainingVectors := data.UnmarshalTrainingDataFile("training/data/xo.json")
+		cleanedData := data.PrepareData(loadedTrainingVectors)
+
+		initialWeights := make([]models.Weights, 1)
+		initialWeights[0] = make(models.Weights, 25)
+		initialBias := 0.0
+		theta := 0.2
+		learningRate := 0.3
+
+		totalEpochs := perceptron.Train(cleanedData, &initialWeights, &initialBias, theta, learningRate)
+
+		return models.SavedWeightAndBiasJsonObject{
+			Weights:          initialWeights[len(initialWeights)-1],
+			Bias:             initialBias,
+			Theta:            theta,
+			LearningRate:     learningRate,
+			TotalEpoches:     totalEpochs,
+			TrainingDataSize: len(cleanedData),
+			Key:              "xo-perceptron",
+		}
+	})
+
+	hebbDataObject = training.LoadWeightsOrTrain("saved_weights/xo-hebb.json", func() models.SavedWeightAndBiasJsonObject {
+		loadedTrainingVectors := data.UnmarshalTrainingDataFile("training/data/xo.json")
+		cleanedData := data.PrepareData(loadedTrainingVectors)
+
+		initialWeights := make([]models.Weights, 1)
+		initialWeights[0] = make(models.Weights, 25)
+		initialBias := 0.0
+
+		hebb.Train(cleanedData, &initialWeights, &initialBias)
+
+		return models.SavedWeightAndBiasJsonObject{
+			Weights:          initialWeights[len(initialWeights)-1],
+			Bias:             initialBias,
+			Theta:            -1,
+			LearningRate:     -1,
+			TotalEpoches:     1,
+			TrainingDataSize: len(cleanedData),
+			Key:              "xo-perceptron",
+		}
+	})
 }
