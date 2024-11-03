@@ -5,7 +5,7 @@ import (
 	"xo-detection/utils"
 )
 
-func ActivationFunction(netInput, theta float64) int8 {
+func activationFunction(netInput, theta float64) int8 {
 	if theta < netInput {
 		return 1
 	} else if -theta <= netInput && netInput <= theta {
@@ -15,8 +15,8 @@ func ActivationFunction(netInput, theta float64) int8 {
 	}
 }
 
-// CalculateWeights returns weights and bias + a boolean value that determines if weights changed or not.
-func CalculateWeights(v m.TrainingVector, weights m.Weights, bias, theta, learningRete float64) (m.Weights, float64, bool) {
+// calculateWeights returns weights and bias + a boolean value that determines if weights changed or not.
+func calculateWeights(v m.TrainingVector, weights m.Weights, bias, theta, learningRete float64) (m.Weights, float64, bool) {
 	// Net Input = bias + (x1 * w1) + (x2 * w2) + ... + (xn + wn)
 	netInput := bias
 
@@ -24,7 +24,7 @@ func CalculateWeights(v m.TrainingVector, weights m.Weights, bias, theta, learni
 		netInput += x * weights[i]
 	}
 
-	f := ActivationFunction(netInput, theta)
+	f := activationFunction(netInput, theta)
 
 	if utils.FloatsEqual(v.T, float64(f)) {
 		// y(NetInput) is equal to T that we expected.
@@ -71,7 +71,7 @@ func Train(vectors []m.TrainingVector, weights *[]m.Weights, bias *float64, thet
 
 		for _, v := range vectors {
 			lastWeights := (*weights)[len(*weights)-1]
-			newWeights, newBias, isChanged := CalculateWeights(v, lastWeights, *bias, theta, learningRate)
+			newWeights, newBias, isChanged := calculateWeights(v, lastWeights, *bias, theta, learningRate)
 
 			*weights = append(*weights, newWeights)
 			*bias = newBias
@@ -108,5 +108,5 @@ func Result(inputs, weights m.Weights, bias, theta float64) int8 {
 		netInput += v * weights[i]
 	}
 
-	return ActivationFunction(netInput, theta)
+	return activationFunction(netInput, theta)
 }
