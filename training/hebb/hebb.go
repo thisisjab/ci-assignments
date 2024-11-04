@@ -20,7 +20,7 @@ func calculateWeights(v m.TrainingVector, weights m.Weights, oldBias float64) (f
 }
 
 // Train function gets a initialized weights slices and bias and trains the network keeping track of all weights change.
-func Train(vectors []m.TrainingVector, weights *[]m.Weights, bias *float64) {
+func Train(vectors []m.TrainingVector, weights *m.Weights, bias *float64) {
 	if len(vectors) == 0 {
 		panic("Vectors are uninitialized.")
 	}
@@ -29,14 +29,14 @@ func Train(vectors []m.TrainingVector, weights *[]m.Weights, bias *float64) {
 		panic("Weights are uninitialized.")
 	}
 
-	if len(vectors[0].Values) != len((*weights)[0]) {
+	if len(vectors[0].Values) != len(*weights) {
 		panic("Length of weights and values do not match.")
 	}
 
 	for _, v := range vectors {
-		previousWeights := (*weights)[len(*weights)-1]
+		previousWeights := *weights
 		newWeights, newBias := calculateWeights(v, previousWeights, *bias)
-		*weights = append(*weights, newWeights)
+		*weights = newWeights
 		*bias = newBias
 	}
 }

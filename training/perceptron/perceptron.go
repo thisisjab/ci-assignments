@@ -49,7 +49,7 @@ func calculateWeights(v m.TrainingVector, weights m.Weights, bias, theta, learni
 }
 
 // Train function gets a initialized weights slices and bias and trains the network keeping track of all weights change.
-func Train(vectors []m.TrainingVector, weights *[]m.Weights, bias *float64, theta, learningRate float64) int {
+func Train(vectors []m.TrainingVector, weights *m.Weights, bias *float64, theta, learningRate float64) int {
 	if len(vectors) == 0 {
 		panic("Vectors are uninitialized.")
 	}
@@ -58,7 +58,7 @@ func Train(vectors []m.TrainingVector, weights *[]m.Weights, bias *float64, thet
 		panic("Weights are uninitialized.")
 	}
 
-	if len(vectors[0].Values) != len((*weights)[0]) {
+	if len(vectors[0].Values) != len(*weights) {
 		panic("Length of weights and values do not match.")
 	}
 
@@ -70,10 +70,10 @@ func Train(vectors []m.TrainingVector, weights *[]m.Weights, bias *float64, thet
 	for { // For non-gophers: This is a while loop.
 
 		for _, v := range vectors {
-			lastWeights := (*weights)[len(*weights)-1]
+			lastWeights := *weights
 			newWeights, newBias, isChanged := calculateWeights(v, lastWeights, *bias, theta, learningRate)
 
-			*weights = append(*weights, newWeights)
+			*weights = newWeights
 			*bias = newBias
 
 			if !isChanged {

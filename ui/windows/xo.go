@@ -116,8 +116,7 @@ func loadWeightsToMemory() {
 		loadedTrainingVectors := data.UnmarshalTrainingDataFile("training/data/xo.json")
 		cleanedData := data.PrepareData(loadedTrainingVectors)
 
-		initialWeights := make([]models.Weights, 1)
-		initialWeights[0] = make(models.Weights, 25)
+		initialWeights := make(models.Weights, 25)
 		initialBias := 0.0
 		theta := 0.2
 		learningRate := 0.3
@@ -125,7 +124,7 @@ func loadWeightsToMemory() {
 		totalEpochs := perceptron.Train(cleanedData, &initialWeights, &initialBias, theta, learningRate)
 
 		return models.SavedWeightAndBiasJsonObject{
-			Weights:          initialWeights[len(initialWeights)-1],
+			Weights:          initialWeights,
 			Bias:             initialBias,
 			Theta:            theta,
 			LearningRate:     learningRate,
@@ -139,14 +138,13 @@ func loadWeightsToMemory() {
 		loadedTrainingVectors := data.UnmarshalTrainingDataFile("training/data/xo.json")
 		cleanedData := data.PrepareData(loadedTrainingVectors)
 
-		initialWeights := make([]models.Weights, 1)
-		initialWeights[0] = make(models.Weights, 25)
+		initialWeights := make(models.Weights, 25)
 		initialBias := 0.0
 
 		hebb.Train(cleanedData, &initialWeights, &initialBias)
 
 		return models.SavedWeightAndBiasJsonObject{
-			Weights:          initialWeights[len(initialWeights)-1],
+			Weights:          initialWeights,
 			Bias:             initialBias,
 			Theta:            -1,
 			LearningRate:     -1,
