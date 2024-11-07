@@ -5,6 +5,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
+	"strconv"
 	"xo-detection/data"
 	"xo-detection/models"
 	"xo-detection/training"
@@ -19,6 +20,14 @@ var buttons [25]*widget.Button
 var resultButton *widget.Button
 var clearButton *widget.Button
 var resultLabel *widget.Label
+
+var hebbSuccessRateLabel *widget.Label
+var perceptronSuccessRateLabel *widget.Label
+var perceptronLearningRateEntry *widget.Entry
+var perceptronThetaEntry *widget.Entry
+var adalineSuccessRateLabel *widget.Label
+var adalineLearningRateEntry *widget.Entry
+var adalineStopConditionEntry *widget.Entry
 
 const CountOfDataToUse = 400
 
@@ -58,7 +67,21 @@ func XOWindow(parent *fyne.Window) *fyne.Container {
 		vbox.Add(buttonsRow)
 	}
 
-	loadWeightsToMemory()
+	hebbSuccessRateLabel = widget.NewLabel("Hebb Success Rate: ")
+
+	perceptronSuccessRateLabel = widget.NewLabel("Perceptron Success Rate: ")
+	perceptronLearningRateEntry = widget.NewEntry()
+	perceptronLearningRateEntry.SetText("0.1")
+	perceptronThetaEntry = widget.NewEntry()
+	perceptronThetaEntry.SetText("0.5")
+
+	adalineSuccessRateLabel = widget.NewLabel("Adaline Success Rate: ")
+	adalineStopConditionEntry = widget.NewEntry()
+	adalineStopConditionEntry.SetText("0.0001")
+	adalineLearningRateEntry = widget.NewEntry()
+	adalineLearningRateEntry.SetText("0.0001")
+
+	loadWeightsToMemory(true, true)
 
 	resultButton = widget.NewButton("Result", func() {
 		calculateResult()
@@ -67,6 +90,58 @@ func XOWindow(parent *fyne.Window) *fyne.Container {
 	vbox.Add(resultButton)
 	vbox.Add(clearButton)
 	vbox.Add(resultLabel)
+
+	vbox.Add(widget.NewSeparator())
+
+	trainingLabelsGrid := container.NewGridWithColumns(4)
+	trainingLabelsGrid.Add(widget.NewLabel(""))
+	trainingLabelsGrid.Add(widget.NewLabel("Learning Rate"))
+	trainingLabelsGrid.Add(widget.NewLabel("Theta / Stop Condition"))
+	trainingLabelsGrid.Add(widget.NewLabel("Success Rate"))
+	vbox.Add(trainingLabelsGrid)
+
+	vbox.Add(widget.NewSeparator())
+
+	hebbGrid := container.NewGridWithColumns(4)
+	hebbGrid.Add(widget.NewLabel("Hebb"))
+	hebbGrid.Add(widget.NewLabel(""))
+	hebbGrid.Add(widget.NewLabel(""))
+	hebbGrid.Add(hebbSuccessRateLabel)
+	vbox.Add(hebbGrid)
+
+	vbox.Add(widget.NewSeparator())
+
+	// Entries for training perceptron
+	perceptronGrid := container.NewGridWithColumns(4)
+	perceptronGrid.Add(widget.NewLabel("Perceptron"))
+	perceptronLearningRateEntry.SetPlaceHolder("Learning Rate")
+	perceptronThetaEntry.SetPlaceHolder("Theta")
+	perceptronGrid.Add(perceptronLearningRateEntry)
+	perceptronGrid.Add(perceptronThetaEntry)
+	perceptronGrid.Add(perceptronSuccessRateLabel)
+	vbox.Add(perceptronGrid)
+
+	vbox.Add(widget.NewSeparator())
+
+	// Entries for training adaline
+	adalineGrid := container.NewGridWithColumns(4)
+	adalineGrid.Add(widget.NewLabel("Adaline"))
+	adalineLearningRateEntry.SetPlaceHolder("Learning Rate")
+	adalineStopConditionEntry.SetPlaceHolder("Stop Condition")
+	adalineGrid.Add(adalineLearningRateEntry)
+	adalineGrid.Add(adalineStopConditionEntry)
+	adalineGrid.Add(adalineSuccessRateLabel)
+	vbox.Add(adalineGrid)
+
+	vbox.Add(widget.NewSeparator())
+
+	trainGrid := container.NewGridWithColumns(3)
+	trainGrid.Add(widget.NewLabel("You can train the network here."))
+	trainGrid.Add(widget.NewLabel(""))
+	trainGrid.Add(widget.NewButton("Start Training", func() {
+		go loadWeightsToMemory(false, false)
+	}))
+	vbox.Add(trainGrid)
 
 	return vbox
 }
@@ -124,8 +199,16 @@ func calculateResult() {
 }
 
 // loadWeightsToMemory reads saved weights file or creates the file and saves the weights after training.
-func loadWeightsToMemory() {
-	perceptronDataObject = training.LoadWeightsOrTrain("saved_weights/xo-perceptron.json", func() models.SavedWeightAndBiasJsonObject {
+func loadWeightsToMemory(saveToDisk, loadFromDisk bool) {
+
+	perceptronThetaEntry.Disable()
+	perceptronLearningRateEntry.Disable()
+	perceptronSuccessRateLabel.SetText("Calculating")
+	adalineStopConditionEntry.Disable()
+	adalineLearningRateEntry.Disable()
+	adalineSuccessRateLabel.SetText("Calculating")
+
+	perceptronDataObject = training.LoadWeightsOrTrain("saved_weights/xo-perceptron.json", saveToDisk, loadFromDisk, func() models.SavedWeightAndBiasJsonObject {
 		loadedTrainingVectors := data.UnmarshalTrainingDataFile("training/data/xo_shuffled_data.json")
 		cleanedData := data.PrepareData(loadedTrainingVectors)
 		trainingData := cleanedData[:CountOfDataToUse]
@@ -133,8 +216,9 @@ func loadWeightsToMemory() {
 
 		initialWeights := make(models.Weights, 25)
 		initialBias := 0.0
-		theta := 0.5
-		learningRate := 0.1
+
+		theta, _ := strconv.ParseFloat(perceptronThetaEntry.Text, 64)
+		learningRate, _ := strconv.ParseFloat(perceptronLearningRateEntry.Text, 64)
 
 		totalEpochs := perceptron.Train(trainingData, &initialWeights, &initialBias, theta, learningRate)
 
@@ -151,7 +235,7 @@ func loadWeightsToMemory() {
 		}
 	})
 
-	adalineDataObject = training.LoadWeightsOrTrain("saved_weights/xo-adaline.json", func() models.SavedWeightAndBiasJsonObject {
+	adalineDataObject = training.LoadWeightsOrTrain("saved_weights/xo-adaline.json", saveToDisk, loadFromDisk, func() models.SavedWeightAndBiasJsonObject {
 		loadedTrainingVectors := data.UnmarshalTrainingDataFile("training/data/xo_shuffled_data.json")
 		cleanedData := data.PrepareData(loadedTrainingVectors)
 		trainingData := cleanedData[:CountOfDataToUse]
@@ -159,8 +243,8 @@ func loadWeightsToMemory() {
 
 		initialWeights := make(models.Weights, 25)
 		initialBias := 0.0
-		stopCondition := 0.0001
-		learningRate := 0.00002
+		stopCondition, _ := strconv.ParseFloat(adalineStopConditionEntry.Text, 64)
+		learningRate, _ := strconv.ParseFloat(adalineLearningRateEntry.Text, 64)
 
 		totalEpochs := adaline.Train(trainingData, &initialWeights, &initialBias, learningRate, stopCondition)
 
@@ -177,7 +261,7 @@ func loadWeightsToMemory() {
 		}
 	})
 
-	hebbDataObject = training.LoadWeightsOrTrain("saved_weights/xo-hebb.json", func() models.SavedWeightAndBiasJsonObject {
+	hebbDataObject = training.LoadWeightsOrTrain("saved_weights/xo-hebb.json", saveToDisk, loadFromDisk, func() models.SavedWeightAndBiasJsonObject {
 		loadedTrainingVectors := data.UnmarshalTrainingDataFile("training/data/xo_shuffled_data.json")
 		cleanedData := data.PrepareData(loadedTrainingVectors)
 		trainingData := cleanedData[:CountOfDataToUse]
@@ -200,4 +284,18 @@ func loadWeightsToMemory() {
 			Key:                  "xo-hebb",
 		}
 	})
+
+	perceptronThetaEntry.Enable()
+	perceptronLearningRateEntry.Enable()
+	adalineStopConditionEntry.Enable()
+	adalineLearningRateEntry.Enable()
+
+	hebbSuccessRateLabel.SetText(strconv.FormatFloat(hebbDataObject.SuccessRate, 'f', 6, 64))
+	perceptronThetaEntry.SetText(strconv.FormatFloat(perceptronDataObject.ThetaOrStopCondition, 'f', 6, 64))
+	perceptronLearningRateEntry.SetText(strconv.FormatFloat(perceptronDataObject.LearningRate, 'f', 6, 64))
+	perceptronSuccessRateLabel.SetText(strconv.FormatFloat(perceptronDataObject.SuccessRate, 'f', 6, 64))
+
+	adalineStopConditionEntry.SetText(strconv.FormatFloat(adalineDataObject.ThetaOrStopCondition, 'f', 6, 64))
+	adalineLearningRateEntry.SetText(strconv.FormatFloat(adalineDataObject.LearningRate, 'f', 6, 64))
+	adalineSuccessRateLabel.SetText(strconv.FormatFloat(adalineDataObject.SuccessRate, 'f', 6, 64))
 }

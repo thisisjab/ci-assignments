@@ -7,8 +7,8 @@ import (
 	"xo-detection/utils"
 )
 
-func LoadWeightsOrTrain(savedWeightsPath string, trainingFunc func() models.SavedWeightAndBiasJsonObject) models.SavedWeightAndBiasJsonObject {
-	if !utils.FileExists(savedWeightsPath) {
+func LoadWeightsOrTrain(savedWeightsPath string, saveToDisk, loadFromDisk bool, trainingFunc func() models.SavedWeightAndBiasJsonObject) models.SavedWeightAndBiasJsonObject {
+	if !loadFromDisk || !utils.FileExists(savedWeightsPath) {
 		log.Printf("Path to saved weights does not exist: %v\n", savedWeightsPath)
 		log.Printf("Training right now.\n")
 
@@ -16,15 +16,17 @@ func LoadWeightsOrTrain(savedWeightsPath string, trainingFunc func() models.Save
 
 		log.Printf("Seems like training is finished: %v\n", objectToSave)
 
-		log.Printf("Saving weights to %v...\n", savedWeightsPath)
-		success, err := data.SaveWeights(objectToSave, savedWeightsPath)
+		if saveToDisk {
+			log.Printf("Saving weights to %v...\n", savedWeightsPath)
+			success, err := data.SaveWeights(objectToSave, savedWeightsPath)
 
-		if !success {
-			log.Printf("Saving data faild.\n")
-			log.Fatalln(err)
+			if !success {
+				log.Printf("Saving data faild.\n")
+				log.Fatalln(err)
+			}
+
+			log.Printf("Saving weights to %v was successful.\n", savedWeightsPath)
 		}
-
-		log.Printf("Saving weights to %v was successful.\n", savedWeightsPath)
 
 		return objectToSave
 	}
