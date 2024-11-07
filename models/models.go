@@ -16,11 +16,13 @@ type TrainingVector struct {
 }
 
 type SavedWeightAndBiasJsonObject struct {
-	Key              string  `json:"key"`
-	Bias             float64 `json:"bias"`
-	Weights          Weights `json:"values"`
-	Theta            float64 `json:"theta"`
-	LearningRate     float64 `json:"learning_rate"`
-	TotalEpoches     int     `json:"total_epoches"`
-	TrainingDataSize int     `json:"training_data_size"`
+	Key                  string  `json:"key"`
+	Bias                 float64 `json:"bias"`
+	Weights              Weights `json:"values"`
+	ThetaOrStopCondition float64 `json:"theta_or_stop_condition"`
+	LearningRate         float64 `json:"learning_rate"`
+	TotalEpoches         int     `json:"total_epoches"`
+	TrainingDataSize     int     `json:"training_data_size"`
+	TestDataSize         int     `json:"test_data_size"`
+	SuccessRate          float64 `json:"success_rate"`
 }

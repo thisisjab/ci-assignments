@@ -1,6 +1,7 @@
 package perceptron
 
 import (
+	"fmt"
 	m "xo-detection/models"
 	"xo-detection/utils"
 )
@@ -109,4 +110,26 @@ func Result(inputs, weights m.Weights, bias, theta float64) int8 {
 	}
 
 	return activationFunction(netInput, theta)
+}
+
+func TestSuccessRate(vectors []m.TrainingVector, weights m.Weights, bias, theta float64) float64 {
+	successCount := 0
+
+	fmt.Printf("Testing success of %v vectors.\n\n", len(vectors))
+
+	for _, vector := range vectors {
+		result := Result(vector.Values, weights, bias, theta)
+
+		fmt.Printf("result %v and vector.T = %v\n", result, vector.T)
+
+		if float64(result) == vector.T {
+			successCount++
+		}
+	}
+
+	successRate := float64(successCount) / float64(len(vectors))
+
+	fmt.Printf("Count of test data %v and success count %v and success rate %v\n", len(vectors), successCount, successRate)
+
+	return successRate
 }

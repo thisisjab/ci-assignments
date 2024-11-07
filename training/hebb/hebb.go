@@ -55,3 +55,19 @@ func Result(inputs, weights m.Weights, bias float64) int8 {
 
 	return -1
 }
+
+func TestSuccessRate(vectors []m.TrainingVector, weights m.Weights, bias float64) float64 {
+	successCount := 0
+
+	for _, vector := range vectors {
+		result := Result(vector.Values, weights, bias)
+
+		if float64(result) == vector.T {
+			successCount++
+		}
+	}
+
+	successRate := float64(successCount) / float64(len(vectors))
+
+	return successRate
+}

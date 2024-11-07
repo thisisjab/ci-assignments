@@ -20,6 +20,8 @@ var resultButton *widget.Button
 var clearButton *widget.Button
 var resultLabel *widget.Label
 
+const CountOfDataToUse = 400
+
 var perceptronDataObject models.SavedWeightAndBiasJsonObject
 var adalineDataObject models.SavedWeightAndBiasJsonObject
 var hebbDataObject models.SavedWeightAndBiasJsonObject
@@ -91,7 +93,7 @@ func clearValues() {
 func calculateResult() {
 	formattedText := "Perceptron: %v | Adaline: %v | Hebb: %v"
 
-	fPerceptron := perceptron.Result(values, perceptronDataObject.Weights, perceptronDataObject.Bias, perceptronDataObject.Theta)
+	fPerceptron := perceptron.Result(values, perceptronDataObject.Weights, perceptronDataObject.Bias, perceptronDataObject.ThetaOrStopCondition)
 	resultPerceptron := ""
 
 	fAdaline := adaline.Result(values, adalineDataObject.Weights, adalineDataObject.Bias)
@@ -124,66 +126,78 @@ func calculateResult() {
 // loadWeightsToMemory reads saved weights file or creates the file and saves the weights after training.
 func loadWeightsToMemory() {
 	perceptronDataObject = training.LoadWeightsOrTrain("saved_weights/xo-perceptron.json", func() models.SavedWeightAndBiasJsonObject {
-		loadedTrainingVectors := data.UnmarshalTrainingDataFile("training/data/xo.json")
+		loadedTrainingVectors := data.UnmarshalTrainingDataFile("training/data/xo_shuffled_data.json")
 		cleanedData := data.PrepareData(loadedTrainingVectors)
+		trainingData := cleanedData[:CountOfDataToUse]
+		testData := cleanedData[CountOfDataToUse:]
 
 		initialWeights := make(models.Weights, 25)
 		initialBias := 0.0
-		theta := 0.2
-		learningRate := 0.3
+		theta := 0.5
+		learningRate := 0.1
 
-		totalEpochs := perceptron.Train(cleanedData, &initialWeights, &initialBias, theta, learningRate)
+		totalEpochs := perceptron.Train(trainingData, &initialWeights, &initialBias, theta, learningRate)
 
 		return models.SavedWeightAndBiasJsonObject{
-			Weights:          initialWeights,
-			Bias:             initialBias,
-			Theta:            theta,
-			LearningRate:     learningRate,
-			TotalEpoches:     totalEpochs,
-			TrainingDataSize: len(cleanedData),
-			Key:              "xo-perceptron",
+			Weights:              initialWeights,
+			Bias:                 initialBias,
+			ThetaOrStopCondition: theta,
+			LearningRate:         learningRate,
+			TotalEpoches:         totalEpochs,
+			TrainingDataSize:     len(trainingData),
+			TestDataSize:         len(testData),
+			SuccessRate:          perceptron.TestSuccessRate(testData, initialWeights, initialBias, theta),
+			Key:                  "xo-perceptron",
 		}
 	})
 
 	adalineDataObject = training.LoadWeightsOrTrain("saved_weights/xo-adaline.json", func() models.SavedWeightAndBiasJsonObject {
-		loadedTrainingVectors := data.UnmarshalTrainingDataFile("training/data/xo.json")
+		loadedTrainingVectors := data.UnmarshalTrainingDataFile("training/data/xo_shuffled_data.json")
 		cleanedData := data.PrepareData(loadedTrainingVectors)
+		trainingData := cleanedData[:CountOfDataToUse]
+		testData := cleanedData[CountOfDataToUse:]
 
 		initialWeights := make(models.Weights, 25)
 		initialBias := 0.0
 		stopCondition := 0.0001
-		learningRate := 0.0001
+		learningRate := 0.00002
 
-		totalEpochs := adaline.Train(cleanedData, &initialWeights, &initialBias, learningRate, stopCondition)
+		totalEpochs := adaline.Train(trainingData, &initialWeights, &initialBias, learningRate, stopCondition)
 
 		return models.SavedWeightAndBiasJsonObject{
-			Weights:          initialWeights,
-			Bias:             initialBias,
-			Theta:            stopCondition,
-			LearningRate:     learningRate,
-			TotalEpoches:     totalEpochs,
-			TrainingDataSize: len(cleanedData),
-			Key:              "xo-adaline",
+			Weights:              initialWeights,
+			Bias:                 initialBias,
+			ThetaOrStopCondition: stopCondition,
+			LearningRate:         learningRate,
+			TotalEpoches:         totalEpochs,
+			TrainingDataSize:     len(trainingData),
+			TestDataSize:         len(testData),
+			SuccessRate:          adaline.TestSuccessRate(testData, initialWeights, initialBias),
+			Key:                  "xo-adaline",
 		}
 	})
 
 	hebbDataObject = training.LoadWeightsOrTrain("saved_weights/xo-hebb.json", func() models.SavedWeightAndBiasJsonObject {
-		loadedTrainingVectors := data.UnmarshalTrainingDataFile("training/data/xo.json")
+		loadedTrainingVectors := data.UnmarshalTrainingDataFile("training/data/xo_shuffled_data.json")
 		cleanedData := data.PrepareData(loadedTrainingVectors)
+		trainingData := cleanedData[:CountOfDataToUse]
+		testData := cleanedData[CountOfDataToUse:]
 
 		initialWeights := make(models.Weights, 25)
 		initialBias := 0.0
 
-		hebb.Train(cleanedData, &initialWeights, &initialBias)
+		hebb.Train(trainingData, &initialWeights, &initialBias)
 
 		return models.SavedWeightAndBiasJsonObject{
-			Weights:          initialWeights,
-			Bias:             initialBias,
-			Theta:            -1,
-			LearningRate:     -1,
-			TotalEpoches:     1,
-			TrainingDataSize: len(cleanedData),
-			Key:              "xo-perceptron",
+			Weights:              initialWeights,
+			Bias:                 initialBias,
+			ThetaOrStopCondition: -1,
+			LearningRate:         -1,
+			TotalEpoches:         1,
+			TrainingDataSize:     len(trainingData),
+			TestDataSize:         len(testData),
+			SuccessRate:          hebb.TestSuccessRate(testData, initialWeights, initialBias),
+			Key:                  "xo-hebb",
 		}
 	})
 }
