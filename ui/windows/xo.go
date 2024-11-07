@@ -8,6 +8,7 @@ import (
 	"xo-detection/data"
 	"xo-detection/models"
 	"xo-detection/training"
+	"xo-detection/training/adaline"
 	"xo-detection/training/hebb"
 	"xo-detection/training/perceptron"
 )
@@ -20,6 +21,7 @@ var clearButton *widget.Button
 var resultLabel *widget.Label
 
 var perceptronDataObject models.SavedWeightAndBiasJsonObject
+var adalineDataObject models.SavedWeightAndBiasJsonObject
 var hebbDataObject models.SavedWeightAndBiasJsonObject
 
 func init() {
@@ -87,10 +89,13 @@ func clearValues() {
 }
 
 func calculateResult() {
-	formattedText := "Perceptron: %v | Hebb: %v"
+	formattedText := "Perceptron: %v | Adaline: %v | Hebb: %v"
 
 	fPerceptron := perceptron.Result(values, perceptronDataObject.Weights, perceptronDataObject.Bias, perceptronDataObject.Theta)
 	resultPerceptron := ""
+
+	fAdaline := adaline.Result(values, adalineDataObject.Weights, adalineDataObject.Bias)
+	resultAdaline := ""
 
 	fHebb := hebb.Result(values, hebbDataObject.Weights, hebbDataObject.Bias)
 	resultHebb := ""
@@ -101,13 +106,19 @@ func calculateResult() {
 		resultPerceptron = "O"
 	}
 
+	if fAdaline == 1 {
+		resultAdaline = "X"
+	} else {
+		resultAdaline = "O"
+	}
+
 	if fHebb >= 1 {
 		resultHebb = "X"
 	} else {
 		resultHebb = "O"
 	}
 
-	resultLabel.SetText(fmt.Sprintf(formattedText, resultPerceptron, resultHebb))
+	resultLabel.SetText(fmt.Sprintf(formattedText, resultPerceptron, resultAdaline, resultHebb))
 }
 
 // loadWeightsToMemory reads saved weights file or creates the file and saves the weights after training.
@@ -131,6 +142,28 @@ func loadWeightsToMemory() {
 			TotalEpoches:     totalEpochs,
 			TrainingDataSize: len(cleanedData),
 			Key:              "xo-perceptron",
+		}
+	})
+
+	adalineDataObject = training.LoadWeightsOrTrain("saved_weights/xo-adaline.json", func() models.SavedWeightAndBiasJsonObject {
+		loadedTrainingVectors := data.UnmarshalTrainingDataFile("training/data/xo.json")
+		cleanedData := data.PrepareData(loadedTrainingVectors)
+
+		initialWeights := make(models.Weights, 25)
+		initialBias := 0.0
+		stopCondition := 0.0001
+		learningRate := 0.0001
+
+		totalEpochs := adaline.Train(cleanedData, &initialWeights, &initialBias, learningRate, stopCondition)
+
+		return models.SavedWeightAndBiasJsonObject{
+			Weights:          initialWeights,
+			Bias:             initialBias,
+			Theta:            stopCondition,
+			LearningRate:     learningRate,
+			TotalEpoches:     totalEpochs,
+			TrainingDataSize: len(cleanedData),
+			Key:              "xo-adaline",
 		}
 	})
 
