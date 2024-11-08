@@ -29,7 +29,7 @@ var adalineSuccessRateLabel *widget.Label
 var adalineLearningRateEntry *widget.Entry
 var adalineStopConditionEntry *widget.Entry
 
-const CountOfDataToUse = 400
+const CountOfDataToUse = 350
 
 var perceptronDataObject models.SavedWeightAndBiasJsonObject
 var adalineDataObject models.SavedWeightAndBiasJsonObject
@@ -77,9 +77,9 @@ func XOWindow(parent *fyne.Window) *fyne.Container {
 
 	adalineSuccessRateLabel = widget.NewLabel("Adaline Success Rate: ")
 	adalineStopConditionEntry = widget.NewEntry()
-	adalineStopConditionEntry.SetText("0.0001")
+	adalineStopConditionEntry.SetText("0.001")
 	adalineLearningRateEntry = widget.NewEntry()
-	adalineLearningRateEntry.SetText("0.0001")
+	adalineLearningRateEntry.SetText("0.01")
 
 	loadWeightsToMemory(true, true)
 
