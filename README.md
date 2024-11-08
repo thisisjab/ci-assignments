@@ -1,5 +1,7 @@
 # CI Assignments
 
+**Full Name:** M. Hossein Jabbarzadeh
+
 This repository contains all assignments for computational intelligence class
 (Dr. Koohestani). Included assignments are:
 
@@ -8,6 +10,8 @@ This repository contains all assignments for computational intelligence class
 
 You can adjust the values for theta, stop condition, learning rate, etc. to re-train the network
 through the GUI.
+
+Hope you enjoy!
 
 # Where to go
 
