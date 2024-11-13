@@ -29,7 +29,7 @@ var adalineSuccessRateLabel *widget.Label
 var adalineLearningRateEntry *widget.Entry
 var adalineStopConditionEntry *widget.Entry
 
-const CountOfDataToUse = 350
+const CountOfDataToUse = 400
 
 var perceptronDataObject models.SavedWeightAndBiasJsonObject
 var adalineDataObject models.SavedWeightAndBiasJsonObject
@@ -179,6 +179,8 @@ func calculateResult() {
 
 	if fPerceptron == 1 {
 		resultPerceptron = "X"
+	} else if fPerceptron == 0 {
+		resultPerceptron = "?"
 	} else {
 		resultPerceptron = "O"
 	}
